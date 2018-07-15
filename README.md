@@ -4,7 +4,7 @@ A discord bot made using [discord.py](https://github.com/Rapptz/discord.py) that
 # Commands
 
 - `!steamid`: tells the bot your Steam ID, using the name in your profile URL. e.g. `!steamid mrpeck` if your Steam profile is http://steamcommunity.com/id/mrpeck
-- `!lobby`: gets the bot to tell everyone your lobby link
+- `!lobby`: makes the bot tell everyone your lobby link, so they can click it and join your game.
 
 # Troubleshooting
 
