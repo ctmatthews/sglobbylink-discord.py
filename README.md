@@ -12,5 +12,6 @@ A discord bot made using [discord.py](https://github.com/Rapptz/discord.py) that
 
 # Installation
 
-- Do whatever you have to do to install a bot using [discord.py](https://github.com/Rapptz/discord.py), and download main.py to wherever you're going to run your bot. Rename it to something else if you want, or even integrate it into your existing Discord bot if you're feeling ambitious.
-- Get a Discord bot token and Steam API key, and enter them in the appropriate places near the top of main.py. If you don't have them, you can get them from https://discordapp.com/developers/applications/me and https://steamcommunity.com/dev/apikey .
+- Download and install [discord.py](https://github.com/Rapptz/discord.py)
+- Save main.py to wherever you're going to run your bot. You can rename it to something else if you want, or even integrate it into your existing Discord bot if you're feeling ambitious.
+- Get a Discord bot token and Steam API key, and paste them in the appropriate places near the top of main.py. If you don't have them, you can get them from https://discordapp.com/developers/applications/me and https://steamcommunity.com/dev/apikey .
