@@ -5,10 +5,10 @@ A discord bot made using [discord.py](https://github.com/Rapptz/discord.py) that
 
 # Commands
 
-- `!steamid`: tells the bot your Steam ID, by entering your full Steam lobby URL or just the last part, e.g. `!steamid http://steamcommunity.com/id/robinwalker` or `!steamid robinwalker`
-- `!lobby`: makes the bot post your lobby link, so they can click it and join your game.
+- `!steamid`: tells the bot your Steam ID, by entering your full Steam lobby URL or just the last part, e.g. `!steamid http://steamcommunity.com/id/robinwalker` or `!steamid robinwalker`.
+- `!lobby`: makes the bot post your lobby link, so they can click it and join your game. NOTE: The bot can't get your lobby ID if your Steam profile is set to private, or if you are set to Appear Offline on your Steam friends.
 
-# Troubleshooting
+# Installation
 
-- The bot can't get your lobby ID if your Steam profile is set to private, or if you are set to Appear Offline on your Steam friends.
-- You need to have a Discord bot token and Steam API key to run this bot. Enter them in the appropriate places at the top of main.py. If you don't have them, you can get them from https://discordapp.com/developers/applications/me and https://steamcommunity.com/dev/apikey .
+- Do whatever you have to do to install a bot using [discord.py](https://github.com/Rapptz/discord.py), and download main.py to wherever you're going to run your bot. Rename it to something else if you want, or even integrate it into your existing Discord bot if you're feeling ambitious.
+- Get a Discord bot token and Steam API key, and enter them in the appropriate places near the top of main.py. If you don't have them, you can get them from https://discordapp.com/developers/applications/me and https://steamcommunity.com/dev/apikey .
