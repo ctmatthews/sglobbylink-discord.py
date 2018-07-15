@@ -22,7 +22,7 @@ steamIdFileName = "steam_ids.txt"
 
 steamIdTable = {}
 
-steamIdInstructions = "enter your full Steam profile URL or just the last part, e.g. `!steamid http://steamcommunity.com/id/robinwalker` or `!steamid robinwalker`"
+steamIdInstructions = "enter your full Steam profile URL or just the last part, e.g. `!steamid http://steamcommunity.com/id/robinwalker/` or `!steamid robinwalker`"
 
 def save_steam_ids():
     try:
@@ -100,7 +100,10 @@ async def on_message(message):
                     pdata = data["response"]["players"][0]
                     if "lobbysteamid" in pdata.keys():
                         steamLobbyUrl = "steam://joinlobby/" + pdata["gameid"] + "/" + pdata["lobbysteamid"] + "/" + steamId
-                        await client.send_message(message.channel, message.author.name + "'s lobby: " + steamLobbyUrl)
+                        gameName = ""
+                        if "gameextrainfo" in pdata.keys():
+                            gameName = pdata["gameextrainfo"] + " "
+                        await client.send_message(message.channel, message.author.name + "'s " + gameName + "lobby: " + steamLobbyUrl)
                     else:
                         await client.send_message(message.channel, "Lobby not found for " + message.author.name + " . Is your Steam profile public, and are you in a lobby?")
                 else:
