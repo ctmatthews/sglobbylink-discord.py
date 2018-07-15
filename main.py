@@ -74,9 +74,12 @@ async def on_message(message):
                     if data["response"] is None:
                         await client.send_message(message.channel, "SteamAPI: ResolveVanityURL() failed for " + message.author.name + ". Is Steam down?")
                     else:
-                        steamIdTable[message.author.id] = data["response"]["steamid"]
-                        save_steam_ids()
-                        await client.send_message(message.channel, "Saved " + message.author.name + "'s Steam ID.")
+                    	if "steamid" in data["response"].keys():
+	                        steamIdTable[message.author.id] = data["response"]["steamid"]
+	                        save_steam_ids()
+	                        await client.send_message(message.channel, "Saved " + message.author.name + "'s Steam ID.")
+	                    else:
+	                    	await client.send_message(message.channel, "Could not find Steam ID: " + idStr + ". Make sure you entered the last part of your Steam profile URL, e.g. for http://steamcommunity.com/id/robinwalker, enter `!steamid robinwalker`")
                 else:
                     await client.send_message(message.channel, "Error: failed to find " + message.author.name + "'s Steam ID.")
 
