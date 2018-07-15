@@ -1,0 +1,99 @@
+import discord
+import asyncio
+import urllib.request
+import json
+
+client = discord.Client()
+
+# get your Discord bot token from https://discordapp.com/developers/applications/me
+discordBotTokenDoNotSteal = "[REDACTED]"
+
+# get your steam API key from https://steamcommunity.com/dev/apikey
+steamApiKeyDoNotSteal = "[REDACTED]"
+
+# replace this with whatever you want!
+steamIdFileName = "steam_ids.txt"
+
+steamIdTable = {}
+
+
+def save_steam_ids():
+    try:
+        with open(steamIdFileName, 'w+') as f:
+            for steamId in steamIdTable.keys():
+                f.write(steamId + " " + steamIdTable[steamId] + "\n")
+    except:
+        pass
+
+
+def load_steam_ids():
+    try:
+        with open(steamIdFileName, 'r') as f:
+            steamIdTable.clear()
+            for line in f:
+                line = line.rstrip('\n')
+                splitLine = line.split(" ")
+                if len(splitLine) >= 2:
+                    steamIdTable[splitLine[0]] = splitLine[1]
+    except Exception as e:
+        print(e)
+        pass
+
+@client.event
+async def on_ready():
+    load_steam_ids()
+
+@client.event
+async def on_message(message):
+    if message.content.startswith('!help'):
+        await client.send_message(message.channel, "Hello it's me, the SG Lobby Link bot.\nCommands:\n- `!lobby`: gets the link to your current Steam lobby.\n- `!steamid`: tells the bot what your Steam ID is. You can enter your full Steam ID as a number, or enter the last part of your profile URL (e.g. if your profile page is http://steamcommunity.com/id/mrpeck, enter `!steamid mrpeck`")
+    if message.content.startswith('!steamid'):
+        words = message.content.split(" ")
+        if len(words) < 2:
+            await client.send_message(message.channel, "`!steamid` usage:  http://steamcommunity.com/id/mrpeck, enter `!steamid mrpeck`), or enter your full Steam ID number")
+        else:
+            idStr = words[1]
+            if len(idStr) > 150:
+                await client.send_message(message.channel, "Error: Steam ID too long.")
+            elif idStr.isdigit():
+                steamIdTable[message.author.id] = idStr
+                save_steam_ids()
+                await client.send_message(message.channel, "Set " + message.author.name + "'s Steam ID.")
+            else:
+                steamIdUrl = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=" + steamApiKeyDoNotSteal + "&vanityurl=" + idStr
+                contents = urllib.request.urlopen(steamIdUrl).read()
+                if contents:
+                    data = json.loads(contents)
+                    if data["response"] is None:
+                        await client.send_message(message.channel, "ResolveVanityURL() failed for " + message.author.name + ". Is Steam down?")
+                    else:
+                        steamIdTable[message.author.id] = data["response"]["steamid"]
+                        save_steam_ids()
+                        await client.send_message(message.channel, "Set " + message.author.name + "'s Steam ID.")
+                else:
+                    await client.send_message(message.channel, "Error: failed to find " + message.author.name + "'s Steam ID.")
+
+    if message.content.startswith('!lobby'):
+        if message.author.id in steamIdTable.keys():
+            steamId = steamIdTable[message.author.id]
+            profileUrl = "http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=" + steamApiKeyDoNotSteal + "&steamids=" + steamId
+            contents = urllib.request.urlopen(profileUrl).read()
+            if contents:
+                data = json.loads(contents)
+                if "response" in data.keys():
+                    pdata = data["response"]["players"][0]
+                    if "lobbysteamid" in pdata.keys():
+                        steamLobbyUrl = "steam://joinlobby/" + pdata["gameid"] + "/" + pdata["lobbysteamid"] + "/" + steamId
+                        await client.send_message(message.channel, message.author.name + "'s lobby: " + steamLobbyUrl)
+                    else:
+                        await client.send_message(message.channel, "Could not find lobby ID for " + message.author.name + " . Are you in a lobby, and is your Steam profile public?")
+                else:
+                    await client.send_message(message.channel, "GetPlayerSummaries() failed for " + message.author.name + ". Is Steam down?")
+                    
+                        
+            else:
+                await client.send_message(message.channel, "GetPlayerSummaries() failed for " + message.author.name + ". Is Steam down?")
+        else:
+            await client.send_message(message.channel, "Could not find Steam ID for " + message.author.name +  ". Tell me your Steam ID with `!steamid`, e.g. `!steamid mrpeck` if your steam profile url is http://steamcommunity.com/id/mrpeck")
+
+client.run(discordBotTokenDoNotSteal)
