@@ -12,12 +12,12 @@ import json
 client = discord.Client()
 
 # IMPORTANT: get your Discord bot token from https://discordapp.com/developers/applications/me
-discordBotTokenDoNotSteal = "REDACTED"
+discordBotTokenDoNotSteal = "PASTE_DISCORD_BOT_TOKEN_HERE"
 
 # IMPORTANT: get your Steam API key from https://steamcommunity.com/dev/apikey
-steamApiKeyDoNotSteal = "REDACTED"
+steamApiKeyDoNotSteal = "PASTE_STEAM_API_KEY_HERE"
 
-# replace this with whatever you want, or leave it as it is. the bot creates this file the first time it runs, and saves users' Steam IDs to it.
+# replace this with whatever you want!
 steamIdFileName = "steam_ids.txt"
 
 steamIdTable = {}
