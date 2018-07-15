@@ -22,6 +22,7 @@ steamIdFileName = "steam_ids.txt"
 
 steamIdTable = {}
 
+steamIdInstructions = "enter your full Steam lobby URL or just the last part, e.g. `!steamid http://steamcommunity.com/id/robinwalker` or `!steamid robinwalker`"
 
 def save_steam_ids():
     try:
@@ -52,14 +53,20 @@ async def on_ready():
 @client.event
 async def on_message(message):
     if message.content.startswith('!help'):
-        await client.send_message(message.channel, "Hello it's me, the SG Lobby Link bot.\nCommands:\n- `!lobby`: posts the link to your current Steam lobby.\n- `!steamid`: tells the bot what your Steam ID is. You can enter your full Steam ID as a number, or enter the last part of your profile URL (e.g. if your profile page is http://steamcommunity.com/id/robinwalker, enter `!steamid robinwalker`")
+        await client.send_message(message.channel, "Hello it's me, the SG Lobby Link bot.\nCommands:\n- `!lobby`: posts the link to your current Steam lobby.\n- `!steamid`: tells the bot what your Steam ID is. You can " + steamIdInstructions)
     if message.content.startswith('!steamid'):
         words = message.content.split(" ")
         if len(words) < 2:
-            await client.send_message(message.channel, "`!steamid` usage: enter the last part of your Steam profile URL (e.g. for http://steamcommunity.com/id/robinwalker, enter `!steamid robinwalker`)")
+            await client.send_message(message.channel, "`!steamid` usage: " + steamIdInstructions)
         else:
             idStr = words[1]
             idStr = idStr.rstrip('/')
+
+            if idStr.find("steamcommunity.com") != -1:
+                lastSlash = idStr.rfind('/')
+                if lastSlash != -1:
+                    idStr = idStr[lastSlash + 1:]
+
             if len(idStr) > 200:
                 await client.send_message(message.channel, "Error: Steam ID too long.")
             elif idStr.isdigit():
@@ -74,12 +81,12 @@ async def on_message(message):
                     if data["response"] is None:
                         await client.send_message(message.channel, "SteamAPI: ResolveVanityURL() failed for " + message.author.name + ". Is Steam down?")
                     else:
-                    	if "steamid" in data["response"].keys():
-	                        steamIdTable[message.author.id] = data["response"]["steamid"]
-	                        save_steam_ids()
-	                        await client.send_message(message.channel, "Saved " + message.author.name + "'s Steam ID.")
-	                    else:
-	                    	await client.send_message(message.channel, "Could not find Steam ID: " + idStr + ". Make sure you entered the last part of your Steam profile URL, e.g. for http://steamcommunity.com/id/robinwalker, enter `!steamid robinwalker`")
+                        if "steamid" in data["response"].keys():
+                            steamIdTable[message.author.id] = data["response"]["steamid"]
+                            save_steam_ids()
+                            await client.send_message(message.channel, "Saved " + message.author.name + "'s Steam ID.")
+                        else:
+                            await client.send_message(message.channel, "Could not find Steam ID: " + idStr + ". Make sure you " + steamIdInstructions)
                 else:
                     await client.send_message(message.channel, "Error: failed to find " + message.author.name + "'s Steam ID.")
 
@@ -104,6 +111,6 @@ async def on_message(message):
             else:
                 await client.send_message(message.channel, "SteamAPI: GetPlayerSummaries() failed for " + message.author.name + ". Is Steam down?")
         else:
-            await client.send_message(message.channel, "Steam ID not found for " + message.author.name +  ". Tell me your Steam ID with `!steamid` and the last part of your Steam profile URL, e.g. `!steamid robinwalker` if your steam profile URL is http://steamcommunity.com/id/robinwalker")
+            await client.send_message(message.channel, "Steam ID not found for " + message.author.name +  ". Type `!steamid` and " + steamIdInstructions)
 
 client.run(discordBotTokenDoNotSteal)
