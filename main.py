@@ -17,7 +17,7 @@ discordBotTokenDoNotSteal = "REDACTED"
 # IMPORTANT: get your Steam API key from https://steamcommunity.com/dev/apikey
 steamApiKeyDoNotSteal = "REDACTED"
 
-# replace this with whatever you want!
+# replace this with whatever you want!, or leave it as it is. the bot creates this file the first time it runs, and saves users' Steam IDs to it.
 steamIdFileName = "steam_ids.txt"
 
 steamIdTable = {}
