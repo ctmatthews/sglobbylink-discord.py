@@ -1,3 +1,7 @@
+# sglobbylink-discord.py
+# by Mr Peck (2018)
+# project page: https://github.com/itsmrpeck/sglobbylink-discord.py
+
 import discord
 import asyncio
 import urllib.request
