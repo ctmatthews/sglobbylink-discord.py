@@ -42,8 +42,7 @@ def load_steam_ids():
                 splitLine = line.split(" ")
                 if len(splitLine) >= 2:
                     steamIdTable[splitLine[0]] = splitLine[1]
-    except Exception as e:
-        print(e)
+    except:
         pass
 
 @client.event
