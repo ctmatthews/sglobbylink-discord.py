@@ -22,7 +22,7 @@ steamIdFileName = "steam_ids.txt"
 
 steamIdTable = {}
 
-steamIdInstructions = "enter your full Steam lobby URL or just the last part, e.g. `!steamid http://steamcommunity.com/id/robinwalker` or `!steamid robinwalker`"
+steamIdInstructions = "enter your full Steam profile URL or just the last part, e.g. `!steamid http://steamcommunity.com/id/robinwalker` or `!steamid robinwalker`"
 
 def save_steam_ids():
     try:
