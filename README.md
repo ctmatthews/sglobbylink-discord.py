@@ -10,6 +10,10 @@ A Discord bot made using [discord.py](https://github.com/Rapptz/discord.py) that
 
 ![Editing My Privacy Settings on a Steam profile, with My Profile and Game Details both set to Public](https://github.com/itsmrpeck/sglobbylink-discord.py/blob/master/public_profile.png "Public Profile")
 
+# Overview Video (YouTube)
+
+https://www.youtube.com/watch?v=aIhaKxGLxBc
+
 # Installation
 
 - Download and install [discord.py](https://github.com/Rapptz/discord.py)
