@@ -20,7 +20,7 @@ versionNumber = "1.1"
 discordBotTokenIMPORTANT = "PASTE_DISCORD_BOT_TOKEN_HERE"
 
 # IMPORTANT: get your Steam API key from https://steamcommunity.com/dev/apikey
-steamApiKeyIMPORTANT = "PASTE_STEAM_WEB_API_KEY_HERE"
+steamApiKeyIMPORTANT = "PASTE_STEAM_API_KEY_HERE"
 
 # You can replace this with whatever you want! This is where the bot stores its users' Steam IDs.
 steamIdFileName = "steam_ids.txt"
@@ -33,6 +33,7 @@ channelWhitelist = []
 
 # Rate limiting: each user can only ask the bot for this many things per day. This stops you from breaking the daily request limit for your Steam API key.
 maxDailyRequestsPerUser = 60
+maxTotalDailyRequests = 45000
 
 #######
 ######################################
@@ -40,21 +41,29 @@ maxDailyRequestsPerUser = 60
 
 
 
-client = discord.Client()
-
 steamIdTable = {}
 
 steamIdInstructions = "enter your full Steam profile URL or just the last part, e.g. `!steamid http://steamcommunity.com/id/robinwalker/` or `!steamid robinwalker`"
 
-
 todaysRequestCounts = {}
+
+todaysTotalRequestCount = 0
 
 requestCountsLock = threading.RLock()
 
+client = discord.Client()
+
 class RequestLimitResult(Enum):
     LIMIT_NOT_REACHED = 1
-    LIMIT_JUST_REACHED = 2
-    ALREADY_OVER_LIMIT = 3
+    USER_LIMIT_JUST_REACHED = 2
+    TOTAL_LIMIT_JUST_REACHED = 3
+    ALREADY_OVER_LIMIT = 4
+
+class LobbyBotCommand(Enum):
+    NONE = 1
+    HELP = 2
+    STEAMID = 3
+    LOBBY = 4
 
 def save_steam_ids():
     try:
@@ -65,6 +74,9 @@ def save_steam_ids():
         pass
 
 def load_steam_ids():
+    global steamIdFileName
+    global steamIdTable
+
     try:
         with open(steamIdFileName, 'r') as f:
             steamIdTable.clear()
@@ -77,10 +89,18 @@ def load_steam_ids():
         pass
 
 def increment_request_count(userIdStr): # returns whether or not the user has hit their daily request limit
+    global todaysRequestCounts
+    global todaysTotalRequestCount
+    global maxDailyRequestsPerUser
+    global maxTotalDailyRequests
+
     if maxDailyRequestsPerUser <= 0:
         return RequestLimitResult.ALREADY_OVER_LIMIT
 
     with requestCountsLock:
+
+        if todaysTotalRequestCount > maxTotalDailyRequests:
+            return RequestLimitResult.ALREADY_OVER_LIMIT
 
         if userIdStr not in todaysRequestCounts.keys():
             todaysRequestCounts[userIdStr] = 0
@@ -88,22 +108,30 @@ def increment_request_count(userIdStr): # returns whether or not the user has hi
         if todaysRequestCounts[userIdStr] > maxDailyRequestsPerUser:
             return RequestLimitResult.ALREADY_OVER_LIMIT
 
-        elif todaysRequestCounts[userIdStr] == maxDailyRequestsPerUser:
-            todaysRequestCounts[userIdStr] += 1
-            return RequestLimitResult.LIMIT_JUST_REACHED
+        todaysRequestCounts[userIdStr] += 1
+        todaysTotalRequestCount += 1
+
+        if todaysTotalRequestCount > maxTotalDailyRequests:
+            return RequestLimitResult.TOTAL_LIMIT_JUST_REACHED
+
+        elif todaysRequestCounts[userIdStr] > maxDailyRequestsPerUser:
+            return RequestLimitResult.USER_LIMIT_JUST_REACHED
 
         else:
-            todaysRequestCounts[userIdStr] += 1
             return RequestLimitResult.LIMIT_NOT_REACHED
 
     return RequestLimitResult.ALREADY_OVER_LIMIT
 
 
 async def clear_request_counts_once_per_day():
+    global todaysRequestCounts
+    global todaysTotalRequestCount
+
     await client.wait_until_ready()
     while not client.is_closed:
         with requestCountsLock:
             todaysRequestCounts.clear()
+            todaysTotalRequestCount = 0
         await asyncio.sleep(60*60*24) # task runs every 24 hours
         
 
@@ -129,28 +157,30 @@ async def on_message(message):
         if not channelFound:
             return
 
-
     if message.content.startswith('!help'):
-        # rate limit check
-        rateLimitResult = increment_request_count(message.author.id)
-        if rateLimitResult == RequestLimitResult.ALREADY_OVER_LIMIT:
-            return
-        elif rateLimitResult == RequestLimitResult.LIMIT_JUST_REACHED:
-            await client.send_message(message.channel, "Error: Daily request limit reached for user " + message.author.name + ". Try again in 24 hours.")
-            return
+        botCmd = LobbyBotCommand.HELP
+    elif message.content.startswith('!steamid'):
+        botCmd = LobbyBotCommand.STEAMID
+    elif message.content.startswith('!lobby'):
+        botCmd = LobbyBotCommand.LOBBY
+    else:
+        return
 
+    # rate limit check
+    rateLimitResult = increment_request_count(message.author.id)
+    if rateLimitResult == RequestLimitResult.ALREADY_OVER_LIMIT:
+        return
+    elif rateLimitResult == RequestLimitResult.TOTAL_LIMIT_JUST_REACHED:
+        await client.send_message(message.channel, "Error: Total daily bot request limit reached. Try again in 24 hours.")
+        return
+    elif rateLimitResult == RequestLimitResult.USER_LIMIT_JUST_REACHED:
+        await client.send_message(message.channel, "Error: Daily request limit reached for user " + message.author.name + ". Try again in 24 hours.")
+        return
+
+    if botCmd == LobbyBotCommand.HELP:
         await client.send_message(message.channel, "Hello, I am sglobbylink-discord.py v" + versionNumber + " by Mr Peck.\n\nCommands:\n- `!lobby`: posts the link to your current Steam lobby.\n- `!steamid`: tells the bot what your Steam profile is. You can " + steamIdInstructions)
 
-    elif message.content.startswith('!steamid'):
-
-        # rate limit check
-        rateLimitResult = increment_request_count(message.author.id)
-        if rateLimitResult == RequestLimitResult.ALREADY_OVER_LIMIT:
-            return
-        elif rateLimitResult == RequestLimitResult.LIMIT_JUST_REACHED:
-            await client.send_message(message.channel, "Error: Daily request limit reached for user " + message.author.name + ". Try again in 24 hours.")
-            return
-
+    elif botCmd == LobbyBotCommand.STEAMID:
         words = message.content.split(" ")
         if len(words) < 2:
             await client.send_message(message.channel, "`!steamid` usage: " + steamIdInstructions)
@@ -186,17 +216,8 @@ async def on_message(message):
                 else:
                     await client.send_message(message.channel, "Error: failed to find " + message.author.name + "'s Steam ID.")
 
-    elif message.content.startswith('!lobby'):
+    elif botCmd == LobbyBotCommand.LOBBY:
         if message.author.id in steamIdTable.keys():
-
-            # rate limit check
-            rateLimitResult = increment_request_count(message.author.id)
-            if rateLimitResult == RequestLimitResult.ALREADY_OVER_LIMIT:
-                return
-            elif rateLimitResult == RequestLimitResult.LIMIT_JUST_REACHED:
-                await client.send_message(message.channel, "Error: Daily request limit reached for user " + message.author.name + ". Try again tomorrow.")
-                return
-
             steamId = steamIdTable[message.author.id]
             profileUrl = "http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=" + steamApiKeyIMPORTANT + "&steamids=" + steamId
             contents = urllib.request.urlopen(profileUrl).read()
@@ -211,7 +232,7 @@ async def on_message(message):
                             gameName = pdata["gameextrainfo"] + " "
                         await client.send_message(message.channel, message.author.name + "'s " + gameName + "lobby: " + steamLobbyUrl)
                     else:
-                        await client.send_message(message.channel, "Lobby not found for " + message.author.name + ". Is your Steam profile public (including Game Details), and are you in a lobby? If this is your first time using the bot, make sure your !steamid is set to your Steam profile URL.")
+                        await client.send_message(message.channel, "Lobby not found for " + message.author.name + ". Is your Steam profile public (including Game Details), and are you in a lobby? If this is your first time using the bot, make sure your `!steamid` is set to your Steam profile URL.")
                 else:
                     await client.send_message(message.channel, "SteamAPI: GetPlayerSummaries() failed for " + message.author.name + ". Is Steam down?")
                         
