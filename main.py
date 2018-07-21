@@ -11,7 +11,7 @@ import json
 import threading
 from enum import Enum
 
-versionNumber = "1.1"
+versionNumber = "1.11"
 
 ######################################
 ####### SETTINGS:
@@ -22,7 +22,7 @@ discordBotTokenIMPORTANT = "PASTE_DISCORD_BOT_TOKEN_HERE"
 # IMPORTANT: get your Steam API key from https://steamcommunity.com/dev/apikey
 steamApiKeyIMPORTANT = "PASTE_STEAM_API_KEY_HERE"
 
-# You can replace this with whatever you want! This is where the bot stores its users' Steam IDs.
+# You can replace this with whatever you want, or leave it as it is. This is where the bot stores its users' Steam IDs.
 steamIdFileName = "steam_ids.txt"
 
 # Add channel names to the whitelist if you only want the bot to read and reply to messages in certain channels.
@@ -30,6 +30,9 @@ steamIdFileName = "steam_ids.txt"
 # Don't include the '#' at the start of the channel names!
 # e.g. channelWhitelist = ["skullgirls", "guilty-gear"]
 channelWhitelist = []
+
+# Set this to False if you don't want users to be able to request their lobby URL via Direct Messages/Whispers
+allowDirectMessages = True
 
 # Rate limiting: each user can only ask the bot for this many things per day. This stops you from breaking the daily request limit for your Steam API key.
 maxDailyRequestsPerUser = 60
@@ -144,11 +147,16 @@ async def on_ready():
 @client.event
 async def on_message(message):
 
-    # ignore messages not on the whitelisted channel
-    if channelWhitelist:
-        if not message.channel:
-            return # ignore all Direct Messages
+    # all commands start with '!'
+    if not message.content.startswith('!'):
+        return
 
+    # filter out DMs
+    if not allowDirectMessages and not message.channel:
+        return
+
+    # filter out messages not on the whitelisted channels
+    if channelWhitelist and message.channel:
         channelFound = False
         for channelName in channelWhitelist:
             if channelName == message.channel.name:
@@ -157,6 +165,7 @@ async def on_message(message):
         if not channelFound:
             return
 
+    # check which command we wanted (and ignore any message that isn't a command)
     if message.content.startswith('!help'):
         botCmd = LobbyBotCommand.HELP
     elif message.content.startswith('!steamid'):
@@ -177,6 +186,7 @@ async def on_message(message):
         await client.send_message(message.channel, "Error: Daily request limit reached for user " + message.author.name + ". Try again in 24 hours.")
         return
 
+    # actually execute the command
     if botCmd == LobbyBotCommand.HELP:
         await client.send_message(message.channel, "Hello, I am sglobbylink-discord.py v" + versionNumber + " by Mr Peck.\n\nCommands:\n- `!lobby`: posts the link to your current Steam lobby.\n- `!steamid`: tells the bot what your Steam profile is. You can " + steamIdInstructions)
 
@@ -232,7 +242,7 @@ async def on_message(message):
                             gameName = pdata["gameextrainfo"] + " "
                         await client.send_message(message.channel, message.author.name + "'s " + gameName + "lobby: " + steamLobbyUrl)
                     else:
-                        await client.send_message(message.channel, "Lobby not found for " + message.author.name + ". Is your Steam profile public (including Game Details), and are you in a lobby? If this is your first time using the bot, make sure your `!steamid` is set to your Steam profile URL.")
+                        await client.send_message(message.channel, "Lobby not found for " + message.author.name + ". Make sure your Steam profile is public (including Game Details), and that you are in a lobby. If this is your first time using the bot, make sure your `!steamid` is set to your Steam profile URL.")
                 else:
                     await client.send_message(message.channel, "SteamAPI: GetPlayerSummaries() failed for " + message.author.name + ". Is Steam down?")
                         
