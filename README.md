@@ -5,7 +5,7 @@ A Discord bot made using [discord.py](https://github.com/Rapptz/discord.py) that
 
 # Commands
 
-- `!steamid`: use this to tell the bot your Steam ID, by entering your full Steam profile URL e.g. `!steamid http://steamcommunity.com/id/robinwalker/`
+- `!steamid`: use this to tell the bot your Steam ID, by entering your full Steam profile URL e.g. `!steamid http://steamcommunity.com/id/robinwalker/`. You can get this URL by opening the main Steam window, hovering over your name (next to Store/Library/Community), clicking Profile, right-clicking the page background and choosing Copy Page URL.
 - `!lobby`: makes the bot post your lobby link, so people can click it and join your game. NOTE: The bot can't get your lobby ID if your Steam profile is set to private, or if you are set to Appear Offline on your Steam friends. This is out of my control; it's just how the Steam Web API works.
 
 ![Editing My Privacy Settings on a Steam profile, with My Profile and Game Details both set to Public](https://github.com/itsmrpeck/sglobbylink-discord.py/blob/master/public_profile.png "Public Profile")
