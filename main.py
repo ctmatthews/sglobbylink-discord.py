@@ -11,7 +11,7 @@ import json
 import threading
 from enum import Enum
 
-versionNumber = "1.11"
+versionNumber = "1.12"
 
 ######################################
 ####### SETTINGS:
