@@ -17,5 +17,5 @@ https://www.youtube.com/watch?v=aIhaKxGLxBc
 # Installation
 
 - Download and install [discord.py](https://github.com/Rapptz/discord.py)
-- Download/clone this repository, or just save [main.py](https://github.com/itsmrpeck/sglobbylink-discord.py/blob/master/main.py) to wherever you're going to run your bot. You can rename it to something else if you want, or even integrate it into your existing Discord bot if you're feeling ambitious.
-- Get a Discord bot token and Steam API key, and paste them in the appropriate places near the top of main.py. If you don't have them, you can get them from https://discordapp.com/developers/applications/me and https://steamcommunity.com/dev/apikey .
+- Download/clone this repository, or just save [main.py](https://github.com/itsmrpeck/sglobbylink-discord.py/blob/master/main.py) and [settings_sglobbylink.py](https://github.com/itsmrpeck/sglobbylink-discord.py/blob/master/settings_sglobbylink.py) to wherever you're going to run your bot. You can rename it to something else if you want, or even integrate it into your existing Discord bot if you're feeling ambitious.
+- Get a Discord bot token and Steam API key, and paste them in the appropriate places near the top of settings_sglobbylink.py. If you don't have them, you can get them from https://discordapp.com/developers/applications/me and https://steamcommunity.com/dev/apikey .
