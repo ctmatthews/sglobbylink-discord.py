@@ -46,7 +46,7 @@ maxTotalDailyRequests = 45000
 
 steamIdTable = {}
 
-steamIdInstructions = "enter your full Steam profile URL or just the last part, e.g. `!steamid http://steamcommunity.com/id/robinwalker/` or `!steamid robinwalker`"
+steamIdInstructions = "enter your full Steam profile URL or just the last part, e.g. `!steamid http://steamcommunity.com/id/robinwalker/` or `!steamid robinwalker`. DON'T just enter your current Steam nickname, e.g. `!steamid Jim`, or it will think you are `http://steamcommunity.com/id/Jim/`"
 
 todaysRequestCounts = {}
 
@@ -242,7 +242,7 @@ async def on_message(message):
                             gameName = pdata["gameextrainfo"] + " "
                         await client.send_message(message.channel, message.author.name + "'s " + gameName + "lobby: " + steamLobbyUrl)
                     else:
-                        await client.send_message(message.channel, "Lobby not found for " + message.author.name + ". Make sure your Steam profile is public (including Game Details), and that you are in a lobby. If this is your first time using the bot, make sure your `!steamid` is set to your Steam profile URL.")
+                        await client.send_message(message.channel, "Lobby not found for " + message.author.name + ". Make sure your Steam profile is public (including Game Details), and that you are in a lobby. If this is your first time using the bot, make sure you set your `!steamid` correctly: " + steamIdInstructions)
                 else:
                     await client.send_message(message.channel, "SteamAPI: GetPlayerSummaries() failed for " + message.author.name + ". Is Steam down?")
                         
