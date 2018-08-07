@@ -11,7 +11,8 @@ import json
 import threading
 from enum import Enum
 
-versionNumber = "1.12"
+versionNumber = "1.2"
+
 
 ######################################
 ####### SETTINGS:
@@ -31,7 +32,13 @@ steamIdFileName = "steam_ids.txt"
 # e.g. channelWhitelist = ["skullgirls", "guilty-gear"]
 channelWhitelist = []
 
-# Set this to False if you don't want users to be able to request their lobby URL via Direct Messages/Whispers
+# Set this to False if you want users to be able to just enter the last part of their URL, e.g. "!steamid robinwalker" instead of "!steamid http://steamcommunity.com/id/robinwalker/".
+# I highly recommend keeping this set to True. Setting it to false just confuses a bunch of players into accidentally entering their Steam nicknames.
+# e.g. Jim tries typing "!steamid Jim", and the bot ends up finding "http://steamcommunity.com/id/Jim/" (who is someone else), and Jim can't figure
+# out why the bot can never find his lobbies.
+onlyAllowFullProfileURLs = True
+
+# Set this to False if you don't want users to be able to talk to the bot via Direct Messages/Whispers
 allowDirectMessages = True
 
 # Rate limiting: each user can only ask the bot for this many things per day. This stops you from breaking the daily request limit for your Steam API key.
@@ -43,10 +50,13 @@ maxTotalDailyRequests = 45000
 
 
 
+steamProfileUrlIdentifier = "steamcommunity.com/id"
+steamProfileUrlIdentifierLen = len(steamProfileUrlIdentifier)
 
 steamIdTable = {}
 
-steamIdInstructions = "enter your full Steam profile URL or just the last part, e.g. `!steamid http://steamcommunity.com/id/robinwalker/` or `!steamid robinwalker`. DON'T just enter your current Steam nickname, e.g. `!steamid Jim`, or it will think you are `http://steamcommunity.com/id/Jim/`"
+steamIdInstructionsOnlyFullURL = "enter your full Steam profile URL, e.g. `!steamid http://steamcommunity.com/id/robinwalker/`. You can get this URL by opening the main Steam window, hovering over your name (next to Store/Library/Community), clicking Profile, right-clicking the page background and choosing Copy Page URL."
+steamIdInstructionsPartialURLAllowed = "enter your full Steam profile URL or just the last part, e.g. `!steamid http://steamcommunity.com/id/robinwalker/` or `!steamid robinwalker`. DON'T just enter your current Steam nickname, e.g. `!steamid Jim`, or it will think you are `http://steamcommunity.com/id/Jim/`"
 
 todaysRequestCounts = {}
 
@@ -67,6 +77,12 @@ class LobbyBotCommand(Enum):
     HELP = 2
     STEAMID = 3
     LOBBY = 4
+
+def get_steam_id_instructions():
+    if onlyAllowFullProfileURLs:
+        return steamIdInstructionsOnlyFullURL
+    else:
+        return steamIdInstructionsPartialURLAllowed
 
 def save_steam_ids():
     try:
@@ -188,27 +204,42 @@ async def on_message(message):
 
     # actually execute the command
     if botCmd == LobbyBotCommand.HELP:
-        await client.send_message(message.channel, "Hello, I am sglobbylink-discord.py v" + versionNumber + " by Mr Peck.\n\nCommands:\n- `!lobby`: posts the link to your current Steam lobby.\n- `!steamid`: tells the bot what your Steam profile is. You can " + steamIdInstructions)
+        await client.send_message(message.channel, "Hello, I am sglobbylink-discord.py v" + versionNumber + " by Mr Peck.\n\nCommands:\n- `!lobby`: posts the link to your current Steam lobby.\n- `!steamid`: tells the bot what your Steam profile is. You can " + get_steam_id_instructions())
+        return
 
     elif botCmd == LobbyBotCommand.STEAMID:
         words = message.content.split(" ")
         if len(words) < 2:
-            await client.send_message(message.channel, "`!steamid` usage: " + steamIdInstructions)
+            await client.send_message(message.channel, "`!steamid` usage: " + get_steam_id_instructions())
+            return
         else:
             idStr = words[1]
             idStr = idStr.rstrip('/')
 
-            if idStr.find("steamcommunity.com") != -1:
+
+            profileUrlStart = idStr.find(steamProfileUrlIdentifier);
+            if profileUrlStart != -1:
+                # It's a steam profile URL. Erase everything after the last slash
                 lastSlash = idStr.rfind('/')
-                if lastSlash != -1:
+                if lastSlash >= (profileUrlStart + steamProfileUrlIdentifierLen):
                     idStr = idStr[lastSlash + 1:]
+                else:
+                    # This is a malformed profile URL, with no slash after "steamcommunity.com/id"
+                    await client.send_message(message.channel, "`!steamid` usage: " + get_steam_id_instructions())
+                    return;
+            elif onlyAllowFullProfileURLs:
+                # This isn't a full profile URL, and we're only allowing full profile URLs
+                await client.send_message(message.channel, "`!steamid` usage: " + get_steam_id_instructions())
+                return
 
             if len(idStr) > 200:
                 await client.send_message(message.channel, "Error: Steam ID too long.")
+                return
             elif idStr.isdigit():
                 steamIdTable[message.author.id] = idStr
                 save_steam_ids()
                 await client.send_message(message.channel, "Saved " + message.author.name + "'s Steam ID.")
+                return
             else:
                 steamIdUrl = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=" + steamApiKeyIMPORTANT + "&vanityurl=" + idStr
                 contents = urllib.request.urlopen(steamIdUrl).read()
@@ -216,15 +247,19 @@ async def on_message(message):
                     data = json.loads(contents)
                     if data["response"] is None:
                         await client.send_message(message.channel, "SteamAPI: ResolveVanityURL() failed for " + message.author.name + ". Is Steam down?")
+                        return
                     else:
                         if "steamid" in data["response"].keys():
                             steamIdTable[message.author.id] = data["response"]["steamid"]
                             save_steam_ids()
                             await client.send_message(message.channel, "Saved " + message.author.name + "'s Steam ID.")
+                            return
                         else:
-                            await client.send_message(message.channel, "Could not find Steam ID: " + idStr + ". Make sure you " + steamIdInstructions)
+                            await client.send_message(message.channel, "Could not find Steam ID: " + idStr + ". Make sure you " + get_steam_id_instructions())
+                            return
                 else:
                     await client.send_message(message.channel, "Error: failed to find " + message.author.name + "'s Steam ID.")
+                    return
 
     elif botCmd == LobbyBotCommand.LOBBY:
         if message.author.id in steamIdTable.keys():
@@ -241,14 +276,19 @@ async def on_message(message):
                         if "gameextrainfo" in pdata.keys():
                             gameName = pdata["gameextrainfo"] + " "
                         await client.send_message(message.channel, message.author.name + "'s " + gameName + "lobby: " + steamLobbyUrl)
+                        return
                     else:
-                        await client.send_message(message.channel, "Lobby not found for " + message.author.name + ". Make sure your Steam profile is public (including Game Details), and that you are in a lobby. If this is your first time using the bot, make sure you set your `!steamid` correctly: " + steamIdInstructions)
+                        await client.send_message(message.channel, "Lobby not found for " + message.author.name + ". Make sure your Steam profile is public (including Game Details), that you are Online on Steam friends, and that you are in a lobby. If this is your first time using the bot, make sure you " + get_steam_id_instructions())
+                        return
                 else:
                     await client.send_message(message.channel, "SteamAPI: GetPlayerSummaries() failed for " + message.author.name + ". Is Steam down?")
+                    return
                         
             else:
                 await client.send_message(message.channel, "SteamAPI: GetPlayerSummaries() failed for " + message.author.name + ". Is Steam down?")
+                return
         else:
-            await client.send_message(message.channel, "Steam ID not found for " + message.author.name +  ". Type `!steamid` and " + steamIdInstructions)
+            await client.send_message(message.channel, "Steam ID not found for " + message.author.name +  ". Type `!steamid` and " + get_steam_id_instructions())
+            return
 
 client.run(discordBotTokenIMPORTANT)
