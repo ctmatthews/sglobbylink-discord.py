@@ -1,8 +1,8 @@
 # sglobbylink-discord.py
 # by Mr Peck (2018)
 # project page: https://github.com/itsmrpeck/sglobbylink-discord.py
-# 
-# NOTE: You must enter your Discord bot token and Steam API key in the SETTINGS section below, or the bot won't work!
+
+# IMPORTANT: You must enter your Discord bot token and Steam API key in settings_sglobbylink.py or the bot won't work!
 
 import discord
 import asyncio
@@ -10,45 +10,9 @@ import urllib.request
 import json
 import threading
 from enum import Enum
+from settings_sglobbylink import *
 
-versionNumber = "1.2"
-
-
-######################################
-####### SETTINGS:
-
-# IMPORTANT: get your Discord bot token from https://discordapp.com/developers/applications/me
-discordBotTokenIMPORTANT = "PASTE_DISCORD_BOT_TOKEN_HERE"
-
-# IMPORTANT: get your Steam API key from https://steamcommunity.com/dev/apikey
-steamApiKeyIMPORTANT = "PASTE_STEAM_API_KEY_HERE"
-
-# You can replace this with whatever you want, or leave it as it is. This is where the bot stores its users' Steam IDs.
-steamIdFileName = "steam_ids.txt"
-
-# Add channel names to the whitelist if you only want the bot to read and reply to messages in certain channels.
-# Leaving the list empty means the bot runs in all channels of your server.
-# Don't include the '#' at the start of the channel names!
-# e.g. channelWhitelist = ["skullgirls", "guilty-gear"]
-channelWhitelist = []
-
-# Set this to False if you want users to be able to just enter the last part of their URL, e.g. "!steamid robinwalker" instead of "!steamid http://steamcommunity.com/id/robinwalker/".
-# I highly recommend keeping this set to True. Setting it to false just confuses a bunch of players into accidentally entering their Steam nicknames.
-# e.g. Jim tries typing "!steamid Jim", and the bot ends up finding "http://steamcommunity.com/id/Jim/" (who is someone else), and Jim can't figure
-# out why the bot can never find his lobbies.
-onlyAllowFullProfileURLs = True
-
-# Set this to False if you don't want users to be able to talk to the bot via Direct Messages/Whispers
-allowDirectMessages = True
-
-# Rate limiting: each user can only ask the bot for this many things per day. This stops you from breaking the daily request limit for your Steam API key.
-maxDailyRequestsPerUser = 60
-maxTotalDailyRequests = 45000
-
-#######
-######################################
-
-
+versionNumber = "1.21"
 
 steamProfileUrlIdentifier = "steamcommunity.com/id"
 steamProfileUrlIdentifierLen = len(steamProfileUrlIdentifier)
@@ -172,10 +136,10 @@ async def on_message(message):
         return
 
     # filter out messages not on the whitelisted channels
-    if channelWhitelist and message.channel:
+    if channelWhitelistIDs and message.channel:
         channelFound = False
-        for channelName in channelWhitelist:
-            if channelName == message.channel.name:
+        for channelID in channelWhitelistIDs:
+            if channelID == message.channel.id:
                 channelFound = True
                 break
         if not channelFound:
