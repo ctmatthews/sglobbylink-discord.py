@@ -12,10 +12,13 @@ import threading
 from enum import Enum
 from settings_sglobbylink import *
 
-versionNumber = "1.21"
+versionNumber = "1.22"
 
 steamProfileUrlIdentifier = "steamcommunity.com/id"
 steamProfileUrlIdentifierLen = len(steamProfileUrlIdentifier)
+
+steamProfileUrlLongIdentifier = "steamcommunity.com/profiles"
+steamProfileUrlLongIdentifierLen = len(steamProfileUrlLongIdentifier)
 
 steamIdTable = {}
 
@@ -180,7 +183,6 @@ async def on_message(message):
             idStr = words[1]
             idStr = idStr.rstrip('/')
 
-
             profileUrlStart = idStr.find(steamProfileUrlIdentifier);
             if profileUrlStart != -1:
                 # It's a steam profile URL. Erase everything after the last slash
@@ -191,10 +193,22 @@ async def on_message(message):
                     # This is a malformed profile URL, with no slash after "steamcommunity.com/id"
                     await client.send_message(message.channel, "`!steamid` usage: " + get_steam_id_instructions())
                     return;
-            elif onlyAllowFullProfileURLs:
-                # This isn't a full profile URL, and we're only allowing full profile URLs
-                await client.send_message(message.channel, "`!steamid` usage: " + get_steam_id_instructions())
-                return
+            else:
+                # Try the other type of steam profile URL. Let's copy and paste.
+                profileUrlStart = idStr.find(steamProfileUrlLongIdentifier);0
+                if profileUrlStart != -1:
+                    # It's a steam profile URL. Erase everything after the last slash
+                    lastSlash = idStr.rfind('/')
+                    if lastSlash >= (profileUrlStart + steamProfileUrlLongIdentifierLen):
+                        idStr = idStr[lastSlash + 1:]
+                    else:
+                        # This is a malformed profile URL, with no slash after "steamcommunity.com/profiles"
+                        await client.send_message(message.channel, "`!steamid` usage: " + get_steam_id_instructions())
+                        return;
+                elif onlyAllowFullProfileURLs:
+                    # This isn't either type of full profile URL, and we're only allowing full profile URLs
+                    await client.send_message(message.channel, "`!steamid` usage: " + get_steam_id_instructions())
+                    return
 
             if len(idStr) > 200:
                 await client.send_message(message.channel, "Error: Steam ID too long.")
