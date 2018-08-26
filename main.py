@@ -12,7 +12,7 @@ import threading
 from enum import Enum
 from settings_sglobbylink import *
 
-versionNumber = "1.22"
+versionNumber = "1.23"
 
 steamProfileUrlIdentifier = "steamcommunity.com/id"
 steamProfileUrlIdentifierLen = len(steamProfileUrlIdentifier)
@@ -256,7 +256,7 @@ async def on_message(message):
                         await client.send_message(message.channel, message.author.name + "'s " + gameName + "lobby: " + steamLobbyUrl)
                         return
                     else:
-                        await client.send_message(message.channel, "Lobby not found for " + message.author.name + ". Make sure your Steam profile is public (including Game Details), that you are Online on Steam friends, and that you are in a lobby. If this is your first time using the bot, make sure you " + get_steam_id_instructions())
+                        await client.send_message(message.channel, "Lobby not found for " + message.author.name + ". Make sure your Steam profile is public (including Game Details), that you are Online on Steam friends, and that you are in a lobby.")
                         return
                 else:
                     await client.send_message(message.channel, "SteamAPI: GetPlayerSummaries() failed for " + message.author.name + ". Is Steam down?")
