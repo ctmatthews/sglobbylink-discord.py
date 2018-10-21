@@ -9,10 +9,19 @@ import asyncio
 import urllib.request
 import json
 import threading
+import time
 from enum import Enum
 from settings_sglobbylink import *
 
-versionNumber = "1.23"
+# Default settings for old versions of settings_sglobbylink:
+if not "allowImagePosting" in locals():
+    allowImagePosting = True
+
+if not "imagePostingCooldownSeconds" in locals():
+    imagePostingCooldownSeconds = 60 * 10
+
+
+versionNumber = "1.24"
 
 steamProfileUrlIdentifier = "steamcommunity.com/id"
 steamProfileUrlIdentifierLen = len(steamProfileUrlIdentifier)
@@ -30,6 +39,8 @@ todaysRequestCounts = {}
 todaysTotalRequestCount = 0
 
 requestCountsLock = threading.RLock()
+
+lastImagePostedTimestamp = 0
 
 client = discord.Client()
 
@@ -119,8 +130,19 @@ async def clear_request_counts_once_per_day():
             todaysRequestCounts.clear()
             todaysTotalRequestCount = 0
         await asyncio.sleep(60*60*24) # task runs every 24 hours
-        
 
+def check_if_image_can_be_posted_and_update_timestamp_if_true():
+    global allowImagePosting
+    global imagePostingCooldownSeconds
+    global lastImagePostedTimestamp      
+
+    if allowImagePosting:
+        currentTime = time.time()
+        if (currentTime - lastImagePostedTimestamp) >= imagePostingCooldownSeconds:
+            lastImagePostedTimestamp = currentTime
+            return True
+
+    return False
 
 @client.event
 async def on_ready():
@@ -224,7 +246,7 @@ async def on_message(message):
                 if contents:
                     data = json.loads(contents)
                     if data["response"] is None:
-                        await client.send_message(message.channel, "SteamAPI: ResolveVanityURL() failed for " + message.author.name + ". Is Steam down?")
+                        await client.send_message(message.channel, "SteamAPI: ResolveVanityURL() failed for " + message.author.name + ". Is the Steam Web API down?")
                         return
                     else:
                         if "steamid" in data["response"].keys():
@@ -256,14 +278,54 @@ async def on_message(message):
                         await client.send_message(message.channel, message.author.name + "'s " + gameName + "lobby: " + steamLobbyUrl)
                         return
                     else:
-                        await client.send_message(message.channel, "Lobby not found for " + message.author.name + ". Make sure your Steam profile is public (including Game Details), that you are Online on Steam friends, and that you are in a lobby.")
-                        return
+                        # Steam didn't give us a lobby ID. But why?
+                        # Let's test if their profile's Game Details are public by seeing if Steam will tell us how many games they own.
+                        ownedGamesUrl = "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=" + steamApiKeyIMPORTANT + "&steamid=" + steamId + "&include_played_free_games=1"
+                        ownedGamesContents = urllib.request.urlopen(ownedGamesUrl).read()
+                        if ownedGamesContents:
+                            ownedGamesData = json.loads(ownedGamesContents)
+                            if "response" in ownedGamesData.keys():
+                                if "game_count" in ownedGamesData["response"].keys() and ownedGamesData["response"]["game_count"] > 0:
+                                    # They have public Game Details. Let's make sure we can see their account, and that they're online
+                                    if pdata["communityvisibilitystate"] == 3: # If the bot can view whether or not the player's Steam account is online https://developer.valvesoftware.com/wiki/Steam_Web_API#GetPlayerSummaries_.28v0002.29
+                                        if "personastate" in pdata.keys() and pdata["personastate"] > 0:
+                                            # They have public Game Details, Steam thinks they're online. Let's see if they're in a game!
+                                            if "gameid" in pdata.keys():
+                                                gameName = ""
+                                                if "gameextrainfo" in pdata.keys():
+                                                    gameName = pdata["gameextrainfo"]
+                                                else:
+                                                    gameName = "a game"
+                                                await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Steam thinks you're playing " + gameName + " but not in a lobby. Make sure you're in a lobby.")
+                                                return
+                                            else:
+                                                await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Steam thinks you're online but not playing a game. Make sure you're in a Steam game.")
+                                                return
+                                        else:
+                                            await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Steam thinks you're offline. Make sure you're connected to Steam, and not set to Appear Offline on your friends list.")
+                                            return
+                                    else:
+                                        await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Your profile is not public.")
+                                        if check_if_image_can_be_posted_and_update_timestamp_if_true():
+                                            await client.send_file(message.channel, "public_profile_instructions.jpg")
+                                        return
+                                else:
+                                    await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Your profile's Game Details are not public.")
+                                    if check_if_image_can_be_posted_and_update_timestamp_if_true():
+                                        await client.send_file(message.channel, "public_profile_instructions.jpg")
+                                    return
+                            else:
+                                await client.send_message(message.channel, "SteamAPI: GetOwnedGames() failed for " + message.author.name + ". Is the Steam Web API down?")
+                                return
+                        else:
+                            await client.send_message(message.channel, "SteamAPI: GetOwnedGames() failed for " + message.author.name + ". Is the Steam Web API down?")
+                            return
                 else:
-                    await client.send_message(message.channel, "SteamAPI: GetPlayerSummaries() failed for " + message.author.name + ". Is Steam down?")
+                    await client.send_message(message.channel, "SteamAPI: GetPlayerSummaries() failed for " + message.author.name + ". Is the Steam Web API down?")
                     return
                         
             else:
-                await client.send_message(message.channel, "SteamAPI: GetPlayerSummaries() failed for " + message.author.name + ". Is Steam down?")
+                await client.send_message(message.channel, "SteamAPI: GetPlayerSummaries() failed for " + message.author.name + ". Is the Steam Web API down?")
                 return
         else:
             await client.send_message(message.channel, "Steam ID not found for " + message.author.name +  ". Type `!steamid` and " + get_steam_id_instructions())
