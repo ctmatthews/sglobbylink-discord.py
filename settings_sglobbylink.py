@@ -7,10 +7,10 @@
 
 # IMPORTANT: You must enter these or the bot won't work!
 
-# Get your Discord bot token from https://discordapp.com/developers/applications/me
+# IMPORTANT: get your Discord bot token from https://discordapp.com/developers/applications/me
 discordBotTokenIMPORTANT = "PASTE_DISCORD_BOT_TOKEN_HERE"
 
-# Get your Steam API key from https://steamcommunity.com/dev/apikey
+# IMPORTANT: get your Steam API key from https://steamcommunity.com/dev/apikey
 steamApiKeyIMPORTANT = "PASTE_STEAM_API_KEY_HERE"
 
 
@@ -41,6 +41,10 @@ allowDirectMessages = True
 # Rate limiting: each user can only ask the bot for this many things per day. This stops you from breaking the daily request limit for your Steam API key.
 maxDailyRequestsPerUser = 60
 maxTotalDailyRequests = 45000
+
+# Image spam limiting: How often the bot will post the public_profile_instructions.jpg image for people with private profiles
+allowImagePosting = True
+imagePostingCooldownSeconds = 60 * 10
 
 #######
 ######################################
