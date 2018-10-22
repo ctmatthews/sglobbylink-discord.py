@@ -1,5 +1,5 @@
 # sglobbylink-discord.py
-A Discord bot made using [discord.py](https://github.com/Rapptz/discord.py) that posts the link to your current Steam game lobby when you type `!lobby`, so other people can easily join your game without having to be on your friends list. It's intended to be used in the matchmaking channel of Fighting Game Community Discord servers, but it could be useful for other types of games too. Feel free to integrate it into Discord bots of your own, or use it on your community's server!
+A Discord bot made using [discord.py](https://github.com/Rapptz/discord.py) that posts the link to your current Steam game lobby when you type `!lobby`, so other people can easily join your game without having to be on your friends list. It's intended to be used in the matchmaking channel of Fighting Game Community Discord servers, but it could be useful for other types of games too. Feel free to integrate the code into your own Discord bot, or use it as-is on your community's server!
 
 ![Someone typing !lobby, and the bot posting the lobby link](https://github.com/itsmrpeck/sglobbylink-discord.py/blob/master/example_lobby_link.png "Example Usage")
 
@@ -17,5 +17,5 @@ https://www.youtube.com/watch?v=aIhaKxGLxBc
 # Installation
 
 - Download and install [discord.py](https://github.com/Rapptz/discord.py)
-- Download/clone this repository, or just save [main.py](https://github.com/itsmrpeck/sglobbylink-discord.py/blob/master/main.py) and [settings_sglobbylink.py](https://github.com/itsmrpeck/sglobbylink-discord.py/blob/master/settings_sglobbylink.py) to wherever you're going to run your bot. You can rename it to something else if you want, or even integrate it into your existing Discord bot if you're feeling ambitious.
+- Download/clone this repository, or just save [main.py](https://github.com/itsmrpeck/sglobbylink-discord.py/blob/master/main.py), [settings_sglobbylink.py](https://github.com/itsmrpeck/sglobbylink-discord.py/blob/master/settings_sglobbylink.py) and [public_profile_instructions.jpg](https://github.com/itsmrpeck/sglobbylink-discord.py/blob/master/public_profile_instructions.jpg) to wherever you're going to run your bot. You can rename main.py to something else if you want, or even integrate its code into your existing Discord bot if you're feeling ambitious.
 - Get a Discord bot token and Steam API key, and paste them in the appropriate places near the top of settings_sglobbylink.py. If you don't have them, you can get them from https://discordapp.com/developers/applications/me and https://steamcommunity.com/dev/apikey .
