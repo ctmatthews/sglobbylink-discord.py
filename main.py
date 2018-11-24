@@ -205,7 +205,7 @@ async def on_message(message):
             idStr = words[1]
             idStr = idStr.rstrip('/')
 
-            profileUrlStart = idStr.find(steamProfileUrlIdentifier);
+            profileUrlStart = idStr.find(steamProfileUrlIdentifier)
             if profileUrlStart != -1:
                 # It's a steam profile URL. Erase everything after the last slash
                 lastSlash = idStr.rfind('/')
@@ -217,7 +217,7 @@ async def on_message(message):
                     return;
             else:
                 # Try the other type of steam profile URL. Let's copy and paste.
-                profileUrlStart = idStr.find(steamProfileUrlLongIdentifier);0
+                profileUrlStart = idStr.find(steamProfileUrlLongIdentifier)
                 if profileUrlStart != -1:
                     # It's a steam profile URL. Erase everything after the last slash
                     lastSlash = idStr.rfind('/')
