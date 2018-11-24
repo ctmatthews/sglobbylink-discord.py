@@ -214,7 +214,7 @@ async def on_message(message):
                 else:
                     # This is a malformed profile URL, with no slash after "steamcommunity.com/id"
                     await client.send_message(message.channel, "`!steamid` usage: " + get_steam_id_instructions())
-                    return;
+                    return
             else:
                 # Try the other type of steam profile URL. Let's copy and paste.
                 profileUrlStart = idStr.find(steamProfileUrlLongIdentifier)
@@ -226,7 +226,7 @@ async def on_message(message):
                     else:
                         # This is a malformed profile URL, with no slash after "steamcommunity.com/profiles"
                         await client.send_message(message.channel, "`!steamid` usage: " + get_steam_id_instructions())
-                        return;
+                        return
                 elif onlyAllowFullProfileURLs:
                     # This isn't either type of full profile URL, and we're only allowing full profile URLs
                     await client.send_message(message.channel, "`!steamid` usage: " + get_steam_id_instructions())
