@@ -20,8 +20,16 @@ if not "allowImagePosting" in locals():
 if not "imagePostingCooldownSeconds" in locals():
     imagePostingCooldownSeconds = 60 * 10
 
+if discordBotTokenIMPORTANT == "PASTE_DISCORD_BOT_TOKEN_HERE":
+    print("ERROR: Discord bot token has not been set. Get one from https://discordapp.com/developers/applications/me and paste it into 'discordBotTokenIMPORTANT' in settings_sglobbylink.py")
+    quit()
 
-versionNumber = "1.24"
+if steamApiKeyIMPORTANT == "PASTE_STEAM_API_KEY_HERE":
+    print("ERROR: Steam Web API key has not been set. Get one from https://steamcommunity.com/dev/apikey and paste it into 'steamApiKeyIMPORTANT' in settings_sglobbylink.py")
+    quit()
+
+
+versionNumber = "1.25"
 
 steamProfileUrlIdentifier = "steamcommunity.com/id"
 steamProfileUrlIdentifierLen = len(steamProfileUrlIdentifier)
