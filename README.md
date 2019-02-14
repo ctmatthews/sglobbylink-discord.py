@@ -25,4 +25,4 @@ https://www.youtube.com/watch?v=aIhaKxGLxBc
 
 # Support
 
-This bot is free of charge so it can be as useful to the Fighting Game Community as possible, but updating, maintaining and supporting it takes time. If you would like to send me a coffee to say thanks, [donate to my Ko-Fi](https://ko-fi.com/mrpeck)!
+This bot can be used free of charge, because I want it to help out as much of the Fighting Game Community as possible. However, it takes time for me to update, maintain and support it. If you would like to send me a coffee to say thanks, [donate to my Ko-Fi](https://ko-fi.com/mrpeck)!
