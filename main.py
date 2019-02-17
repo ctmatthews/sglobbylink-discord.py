@@ -6,8 +6,8 @@
 
 import discord
 import asyncio
-import urllib.request
 import json
+import aiohttp
 import threading
 import time
 from enum import Enum
@@ -29,7 +29,7 @@ if steamApiKeyIMPORTANT == "PASTE_STEAM_API_KEY_HERE":
     quit()
 
 
-versionNumber = "1.25"
+versionNumber = "1.3"
 
 steamProfileUrlIdentifier = "steamcommunity.com/id"
 steamProfileUrlIdentifierLen = len(steamProfileUrlIdentifier)
@@ -39,7 +39,7 @@ steamProfileUrlLongIdentifierLen = len(steamProfileUrlLongIdentifier)
 
 steamIdTable = {}
 
-steamIdInstructionsOnlyFullURL = "enter your full Steam profile URL, e.g. `!steamid http://steamcommunity.com/id/robinwalker/`. You can get this URL by opening the main Steam window, hovering over your name (next to Store/Library/Community), clicking Profile, right-clicking the page background and choosing Copy Page URL."
+steamIdInstructionsOnlyFullURL = "enter your full Steam profile URL, e.g. `!steamid http://steamcommunity.com/id/robinwalker/`"
 steamIdInstructionsPartialURLAllowed = "enter your full Steam profile URL or just the last part, e.g. `!steamid http://steamcommunity.com/id/robinwalker/` or `!steamid robinwalker`. DON'T just enter your current Steam nickname, e.g. `!steamid Jim`, or it will think you are `http://steamcommunity.com/id/Jim/`"
 
 todaysRequestCounts = {}
@@ -48,9 +48,13 @@ todaysTotalRequestCount = 0
 
 requestCountsLock = threading.RLock()
 
-lastImagePostedTimestamp = 0
+lastPublicProfileImagePostedTimestamp = 0
+lastSteamURLImagePostedTimestamp = 0
 
 client = discord.Client()
+
+aioLoop = asyncio.get_event_loop()  
+aioClient = aiohttp.ClientSession(loop=aioLoop)
 
 class RequestLimitResult(Enum):
     LIMIT_NOT_REACHED = 1
@@ -70,7 +74,7 @@ def get_steam_id_instructions():
     else:
         return steamIdInstructionsPartialURLAllowed
 
-def save_steam_ids():
+async def save_steam_ids():
     try:
         with open(steamIdFileName, 'w+') as f:
             for steamId in steamIdTable.keys():
@@ -78,7 +82,7 @@ def save_steam_ids():
     except:
         pass
 
-def load_steam_ids():
+async def load_steam_ids():
     global steamIdFileName
     global steamIdTable
 
@@ -139,23 +143,44 @@ async def clear_request_counts_once_per_day():
             todaysTotalRequestCount = 0
         await asyncio.sleep(60*60*24) # task runs every 24 hours
 
-def check_if_image_can_be_posted_and_update_timestamp_if_true():
+def check_if_public_profile_image_can_be_posted_and_update_timestamp_if_true():
     global allowImagePosting
     global imagePostingCooldownSeconds
-    global lastImagePostedTimestamp      
+    global lastPublicProfileImagePostedTimestamp
 
     if allowImagePosting:
         currentTime = time.time()
-        if (currentTime - lastImagePostedTimestamp) >= imagePostingCooldownSeconds:
-            lastImagePostedTimestamp = currentTime
+        if (currentTime - lastPublicProfileImagePostedTimestamp) >= imagePostingCooldownSeconds:
+            lastPublicProfileImagePostedTimestamp = currentTime
             return True
 
     return False
 
+def check_if_steam_url_image_can_be_posted_and_update_timestamp_if_true():
+    global allowImagePosting
+    global imagePostingCooldownSeconds
+    global lastSteamURLImagePostedTimestamp
+
+    if allowImagePosting:
+        currentTime = time.time()
+        if (currentTime - lastSteamURLImagePostedTimestamp) >= imagePostingCooldownSeconds:
+            lastSteamURLImagePostedTimestamp = currentTime
+            return True
+
+    return False
+
+async def async_get_json(url):  
+    async with aioClient.get(url) as response:
+        if response.status == 200:
+            return await response.read()
+        else:
+            return None
+
 @client.event
 async def on_ready():
-    load_steam_ids()
+    await load_steam_ids()
     client.loop.create_task(clear_request_counts_once_per_day())
+    print("LOADED: sglobbylink-discord.py v" + versionNumber + " by Mr Peck.")
 
 @client.event
 async def on_message(message):
@@ -202,15 +227,25 @@ async def on_message(message):
     # actually execute the command
     if botCmd == LobbyBotCommand.HELP:
         await client.send_message(message.channel, "Hello, I am sglobbylink-discord.py v" + versionNumber + " by Mr Peck.\n\nCommands:\n- `!lobby`: posts the link to your current Steam lobby.\n- `!steamid`: tells the bot what your Steam profile is. You can " + get_steam_id_instructions())
+        if check_if_steam_url_image_can_be_posted_and_update_timestamp_if_true():
+            await client.send_file(message.channel, "steam_url_instructions.jpg")
         return
 
     elif botCmd == LobbyBotCommand.STEAMID:
         words = message.content.split(" ")
         if len(words) < 2:
             await client.send_message(message.channel, "`!steamid` usage: " + get_steam_id_instructions())
+            if check_if_steam_url_image_can_be_posted_and_update_timestamp_if_true():
+                await client.send_file(message.channel, "steam_url_instructions.jpg")
             return
         else:
-            idStr = words[1]
+            maxWordCount = min(len(words), 10)
+            idStr = ""
+            for i in range(1, maxWordCount):
+                if len(words[i]) > 0:
+                    idStr = words[i]
+                    break
+
             idStr = idStr.rstrip('/')
 
             profileUrlStart = idStr.find(steamProfileUrlIdentifier)
@@ -222,10 +257,13 @@ async def on_message(message):
                 else:
                     # This is a malformed profile URL, with no slash after "steamcommunity.com/id"
                     await client.send_message(message.channel, "`!steamid` usage: " + get_steam_id_instructions())
+                    if check_if_steam_url_image_can_be_posted_and_update_timestamp_if_true():
+                        await client.send_file(message.channel, "steam_url_instructions.jpg")
                     return
             else:
                 # Try the other type of steam profile URL. Let's copy and paste.
                 profileUrlStart = idStr.find(steamProfileUrlLongIdentifier)
+
                 if profileUrlStart != -1:
                     # It's a steam profile URL. Erase everything after the last slash
                     lastSlash = idStr.rfind('/')
@@ -234,10 +272,14 @@ async def on_message(message):
                     else:
                         # This is a malformed profile URL, with no slash after "steamcommunity.com/profiles"
                         await client.send_message(message.channel, "`!steamid` usage: " + get_steam_id_instructions())
+                        if check_if_steam_url_image_can_be_posted_and_update_timestamp_if_true():
+                            await client.send_file(message.channel, "steam_url_instructions.jpg")
                         return
                 elif onlyAllowFullProfileURLs:
                     # This isn't either type of full profile URL, and we're only allowing full profile URLs
                     await client.send_message(message.channel, "`!steamid` usage: " + get_steam_id_instructions())
+                    if check_if_steam_url_image_can_be_posted_and_update_timestamp_if_true():
+                        await client.send_file(message.channel, "steam_url_instructions.jpg")
                     return
 
             if len(idStr) > 200:
@@ -245,12 +287,12 @@ async def on_message(message):
                 return
             elif idStr.isdigit():
                 steamIdTable[message.author.id] = idStr
-                save_steam_ids()
+                await save_steam_ids()
                 await client.send_message(message.channel, "Saved " + message.author.name + "'s Steam ID.")
                 return
             else:
                 steamIdUrl = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=" + steamApiKeyIMPORTANT + "&vanityurl=" + idStr
-                contents = urllib.request.urlopen(steamIdUrl).read()
+                contents = await async_get_json(steamIdUrl)
                 if contents:
                     data = json.loads(contents)
                     if data["response"] is None:
@@ -259,11 +301,13 @@ async def on_message(message):
                     else:
                         if "steamid" in data["response"].keys():
                             steamIdTable[message.author.id] = data["response"]["steamid"]
-                            save_steam_ids()
+                            await save_steam_ids()
                             await client.send_message(message.channel, "Saved " + message.author.name + "'s Steam ID.")
                             return
                         else:
                             await client.send_message(message.channel, "Could not find Steam ID: " + idStr + ". Make sure you " + get_steam_id_instructions())
+                            if check_if_steam_url_image_can_be_posted_and_update_timestamp_if_true():
+                                await client.send_file(message.channel, "steam_url_instructions.jpg")
                             return
                 else:
                     await client.send_message(message.channel, "Error: failed to find " + message.author.name + "'s Steam ID.")
@@ -273,7 +317,7 @@ async def on_message(message):
         if message.author.id in steamIdTable.keys():
             steamId = steamIdTable[message.author.id]
             profileUrl = "http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=" + steamApiKeyIMPORTANT + "&steamids=" + steamId
-            contents = urllib.request.urlopen(profileUrl).read()
+            contents = await async_get_json(profileUrl)
             if contents:
                 data = json.loads(contents)
                 if "response" in data.keys():
@@ -289,7 +333,7 @@ async def on_message(message):
                         # Steam didn't give us a lobby ID. But why?
                         # Let's test if their profile's Game Details are public by seeing if Steam will tell us how many games they own.
                         ownedGamesUrl = "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=" + steamApiKeyIMPORTANT + "&steamid=" + steamId + "&include_played_free_games=1"
-                        ownedGamesContents = urllib.request.urlopen(ownedGamesUrl).read()
+                        ownedGamesContents = await async_get_json(ownedGamesUrl)
                         if ownedGamesContents:
                             ownedGamesData = json.loads(ownedGamesContents)
                             if "response" in ownedGamesData.keys():
@@ -304,22 +348,22 @@ async def on_message(message):
                                                     gameName = pdata["gameextrainfo"]
                                                 else:
                                                     gameName = "a game"
-                                                await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Steam thinks you're playing " + gameName + " but not in a lobby. Make sure you're in a lobby.")
+                                                await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Steam thinks you're playing " + gameName + " but not in a lobby.")
                                                 return
                                             else:
-                                                await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Steam thinks you're online but not playing a game. Make sure you're in a Steam game.")
+                                                await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Steam thinks you're online but not playing a game.")
                                                 return
                                         else:
                                             await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Steam thinks you're offline. Make sure you're connected to Steam, and not set to Appear Offline on your friends list.")
                                             return
                                     else:
                                         await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Your profile is not public.")
-                                        if check_if_image_can_be_posted_and_update_timestamp_if_true():
+                                        if check_if_public_profile_image_can_be_posted_and_update_timestamp_if_true():
                                             await client.send_file(message.channel, "public_profile_instructions.jpg")
                                         return
                                 else:
                                     await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Your profile's Game Details are not public.")
-                                    if check_if_image_can_be_posted_and_update_timestamp_if_true():
+                                    if check_if_public_profile_image_can_be_posted_and_update_timestamp_if_true():
                                         await client.send_file(message.channel, "public_profile_instructions.jpg")
                                     return
                             else:
@@ -337,6 +381,8 @@ async def on_message(message):
                 return
         else:
             await client.send_message(message.channel, "Steam ID not found for " + message.author.name +  ". Type `!steamid` and " + get_steam_id_instructions())
+            if check_if_steam_url_image_can_be_posted_and_update_timestamp_if_true():
+                await client.send_file(message.channel, "steam_url_instructions.jpg")
             return
 
 client.run(discordBotTokenIMPORTANT)
