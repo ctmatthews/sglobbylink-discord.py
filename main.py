@@ -29,7 +29,7 @@ if steamApiKeyIMPORTANT == "PASTE_STEAM_API_KEY_HERE":
     quit()
 
 
-versionNumber = "1.3"
+versionNumber = "1.31"
 
 steamProfileUrlIdentifier = "steamcommunity.com/id"
 steamProfileUrlIdentifierLen = len(steamProfileUrlIdentifier)
@@ -285,11 +285,6 @@ async def on_message(message):
             if len(idStr) > 200:
                 await client.send_message(message.channel, "Error: Steam ID too long.")
                 return
-            elif idStr.isdigit():
-                steamIdTable[message.author.id] = idStr
-                await save_steam_ids()
-                await client.send_message(message.channel, "Saved " + message.author.name + "'s Steam ID.")
-                return
             else:
                 steamIdUrl = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=" + steamApiKeyIMPORTANT + "&vanityurl=" + idStr
                 contents = await async_get_json(steamIdUrl)
@@ -301,6 +296,11 @@ async def on_message(message):
                     else:
                         if "steamid" in data["response"].keys():
                             steamIdTable[message.author.id] = data["response"]["steamid"]
+                            await save_steam_ids()
+                            await client.send_message(message.channel, "Saved " + message.author.name + "'s Steam ID.")
+                            return
+                        elif idStr.isdigit():
+                            steamIdTable[message.author.id] = idStr
                             await save_steam_ids()
                             await client.send_message(message.channel, "Saved " + message.author.name + "'s Steam ID.")
                             return
