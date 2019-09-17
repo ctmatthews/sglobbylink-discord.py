@@ -1,5 +1,5 @@
 # sglobbylink-discord.py
-# by Mr Peck (2018)
+# by Mr Peck (2018-2019)
 # project page: https://github.com/itsmrpeck/sglobbylink-discord.py
 
 # IMPORTANT: You must enter your Discord bot token and Steam API key in settings_sglobbylink.py or the bot won't work!
@@ -357,12 +357,12 @@ async def on_message(message):
                                             await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Steam thinks you're offline. Make sure you're connected to Steam, and not set to Appear Offline on your friends list.")
                                             return
                                     else:
-                                        await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Your profile is not public.")
+                                        await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Your profile is not public, so the bot can't see if you're in a lobby.")
                                         if check_if_public_profile_image_can_be_posted_and_update_timestamp_if_true():
                                             await client.send_file(message.channel, "public_profile_instructions.jpg")
                                         return
                                 else:
-                                    await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Your profile's Game Details are not public.")
+                                    await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Your profile's Game Details are not public, so the bot can't see if you're in a lobby.")
                                     if check_if_public_profile_image_can_be_posted_and_update_timestamp_if_true():
                                         await client.send_file(message.channel, "public_profile_instructions.jpg")
                                     return
