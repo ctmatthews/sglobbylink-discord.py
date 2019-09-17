@@ -29,7 +29,7 @@ if steamApiKeyIMPORTANT == "PASTE_STEAM_API_KEY_HERE":
     quit()
 
 
-versionNumber = "1.31"
+versionNumber = "1.32"
 
 steamProfileUrlIdentifier = "steamcommunity.com/id"
 steamProfileUrlIdentifierLen = len(steamProfileUrlIdentifier)
