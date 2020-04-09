@@ -1,5 +1,5 @@
 # sglobbylink-discord.py
-# by Mr Peck (2018-2019)
+# by Mr Peck (2018-2020)
 # project page: https://github.com/itsmrpeck/sglobbylink-discord.py
 
 # IMPORTANT: You must enter your Discord bot token and Steam API key in settings_sglobbylink.py or the bot won't work!
@@ -29,7 +29,7 @@ if steamApiKeyIMPORTANT == "PASTE_STEAM_API_KEY_HERE":
     quit()
 
 
-versionNumber = "1.32"
+versionNumber = "1.4"
 
 steamProfileUrlIdentifier = "steamcommunity.com/id"
 steamProfileUrlIdentifierLen = len(steamProfileUrlIdentifier)
@@ -137,7 +137,7 @@ async def clear_request_counts_once_per_day():
     global todaysTotalRequestCount
 
     await client.wait_until_ready()
-    while not client.is_closed:
+    while not client.is_closed():
         with requestCountsLock:
             todaysRequestCounts.clear()
             todaysTotalRequestCount = 0
@@ -218,25 +218,25 @@ async def on_message(message):
     if rateLimitResult == RequestLimitResult.ALREADY_OVER_LIMIT:
         return
     elif rateLimitResult == RequestLimitResult.TOTAL_LIMIT_JUST_REACHED:
-        await client.send_message(message.channel, "Error: Total daily bot request limit reached. Try again in 24 hours.")
+        await message.channel.send("Error: Total daily bot request limit reached. Try again in 24 hours.")
         return
     elif rateLimitResult == RequestLimitResult.USER_LIMIT_JUST_REACHED:
-        await client.send_message(message.channel, "Error: Daily request limit reached for user " + message.author.name + ". Try again in 24 hours.")
+        await message.channel.send("Error: Daily request limit reached for user " + message.author.name + ". Try again in 24 hours.")
         return
 
     # actually execute the command
     if botCmd == LobbyBotCommand.HELP:
-        await client.send_message(message.channel, "Hello, I am sglobbylink-discord.py v" + versionNumber + " by Mr Peck.\n\nCommands:\n- `!lobby`: posts the link to your current Steam lobby.\n- `!steamid`: tells the bot what your Steam profile is. You can " + get_steam_id_instructions())
+        await message.channel.send("Hello, I am sglobbylink-discord.py v" + versionNumber + " by Mr Peck.\n\nCommands:\n- `!lobby`: posts the link to your current Steam lobby.\n- `!steamid`: tells the bot what your Steam profile is. You can " + get_steam_id_instructions())
         if check_if_steam_url_image_can_be_posted_and_update_timestamp_if_true():
-            await client.send_file(message.channel, "steam_url_instructions.jpg")
+            await message.channel.send("", file=discord.File("steam_url_instructions.jpg"))
         return
 
     elif botCmd == LobbyBotCommand.STEAMID:
         words = message.content.split(" ")
         if len(words) < 2:
-            await client.send_message(message.channel, "`!steamid` usage: " + get_steam_id_instructions())
+            await message.channel.send("`!steamid` usage: " + get_steam_id_instructions())
             if check_if_steam_url_image_can_be_posted_and_update_timestamp_if_true():
-                await client.send_file(message.channel, "steam_url_instructions.jpg")
+                await message.channel.send("", file=discord.File("steam_url_instructions.jpg"))
             return
         else:
             maxWordCount = min(len(words), 10)
@@ -256,9 +256,9 @@ async def on_message(message):
                     idStr = idStr[lastSlash + 1:]
                 else:
                     # This is a malformed profile URL, with no slash after "steamcommunity.com/id"
-                    await client.send_message(message.channel, "`!steamid` usage: " + get_steam_id_instructions())
+                    await message.channel.send("`!steamid` usage: " + get_steam_id_instructions())
                     if check_if_steam_url_image_can_be_posted_and_update_timestamp_if_true():
-                        await client.send_file(message.channel, "steam_url_instructions.jpg")
+                        await message.channel.send("", file=discord.File("steam_url_instructions.jpg"))
                     return
             else:
                 # Try the other type of steam profile URL. Let's copy and paste.
@@ -271,19 +271,19 @@ async def on_message(message):
                         idStr = idStr[lastSlash + 1:]
                     else:
                         # This is a malformed profile URL, with no slash after "steamcommunity.com/profiles"
-                        await client.send_message(message.channel, "`!steamid` usage: " + get_steam_id_instructions())
+                        await message.channel.send("`!steamid` usage: " + get_steam_id_instructions())
                         if check_if_steam_url_image_can_be_posted_and_update_timestamp_if_true():
-                            await client.send_file(message.channel, "steam_url_instructions.jpg")
+                            await message.channel.send("", file=discord.File("steam_url_instructions.jpg"))
                         return
                 elif onlyAllowFullProfileURLs:
                     # This isn't either type of full profile URL, and we're only allowing full profile URLs
-                    await client.send_message(message.channel, "`!steamid` usage: " + get_steam_id_instructions())
+                    await message.channel.send("`!steamid` usage: " + get_steam_id_instructions())
                     if check_if_steam_url_image_can_be_posted_and_update_timestamp_if_true():
-                        await client.send_file(message.channel, "steam_url_instructions.jpg")
+                        await message.channel.send("", file=discord.File("steam_url_instructions.jpg"))
                     return
 
             if len(idStr) > 200:
-                await client.send_message(message.channel, "Error: Steam ID too long.")
+                await message.channel.send("Error: Steam ID too long.")
                 return
             else:
                 steamIdUrl = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=" + steamApiKeyIMPORTANT + "&vanityurl=" + idStr
@@ -291,26 +291,26 @@ async def on_message(message):
                 if contents:
                     data = json.loads(contents)
                     if data["response"] is None:
-                        await client.send_message(message.channel, "SteamAPI: ResolveVanityURL() failed for " + message.author.name + ". Is the Steam Web API down?")
+                        await message.channel.send("SteamAPI: ResolveVanityURL() failed for " + message.author.name + ". Is the Steam Web API down?")
                         return
                     else:
                         if "steamid" in data["response"].keys():
                             steamIdTable[message.author.id] = data["response"]["steamid"]
                             await save_steam_ids()
-                            await client.send_message(message.channel, "Saved " + message.author.name + "'s Steam ID.")
+                            await message.channel.send("Saved " + message.author.name + "'s Steam ID.")
                             return
                         elif idStr.isdigit():
                             steamIdTable[message.author.id] = idStr
                             await save_steam_ids()
-                            await client.send_message(message.channel, "Saved " + message.author.name + "'s Steam ID.")
+                            await message.channel.send("Saved " + message.author.name + "'s Steam ID.")
                             return
                         else:
-                            await client.send_message(message.channel, "Could not find Steam ID: " + idStr + ". Make sure you " + get_steam_id_instructions())
+                            await message.channel.send("Could not find Steam ID: " + idStr + ". Make sure you " + get_steam_id_instructions())
                             if check_if_steam_url_image_can_be_posted_and_update_timestamp_if_true():
-                                await client.send_file(message.channel, "steam_url_instructions.jpg")
+                                await message.channel.send("", file=discord.File("steam_url_instructions.jpg"))
                             return
                 else:
-                    await client.send_message(message.channel, "Error: failed to find " + message.author.name + "'s Steam ID.")
+                    await message.channel.send("Error: failed to find " + message.author.name + "'s Steam ID.")
                     return
 
     elif botCmd == LobbyBotCommand.LOBBY:
@@ -327,7 +327,7 @@ async def on_message(message):
                         gameName = ""
                         if "gameextrainfo" in pdata.keys():
                             gameName = pdata["gameextrainfo"] + " "
-                        await client.send_message(message.channel, message.author.name + "'s " + gameName + "lobby: " + steamLobbyUrl)
+                        await message.channel.send(message.author.name + "'s " + gameName + "lobby: " + steamLobbyUrl)
                         return
                     else:
                         # Steam didn't give us a lobby ID. But why?
@@ -348,41 +348,41 @@ async def on_message(message):
                                                     gameName = pdata["gameextrainfo"]
                                                 else:
                                                     gameName = "a game"
-                                                await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Steam thinks you're playing " + gameName + " but not in a lobby.")
+                                                await message.channel.send("Lobby not found for " + message.author.name + ": Steam thinks you're playing " + gameName + " but not in a lobby.")
                                                 return
                                             else:
-                                                await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Steam thinks you're online but not playing a game.")
+                                                await message.channel.send("Lobby not found for " + message.author.name + ": Steam thinks you're online but not playing a game.")
                                                 return
                                         else:
-                                            await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Steam thinks you're offline. Make sure you're connected to Steam, and not set to Appear Offline on your friends list.")
+                                            await message.channel.send("Lobby not found for " + message.author.name + ": Steam thinks you're offline. Make sure you're connected to Steam, and not set to Appear Offline on your friends list.")
                                             return
                                     else:
-                                        await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Your profile is not public, so the bot can't see if you're in a lobby.")
+                                        await message.channel.send("Lobby not found for " + message.author.name + ": Your profile is not public, so the bot can't see if you're in a lobby.")
                                         if check_if_public_profile_image_can_be_posted_and_update_timestamp_if_true():
-                                            await client.send_file(message.channel, "public_profile_instructions.jpg")
+                                            await message.channel.send("", file=discord.File("public_profile_instructions.jpg"))
                                         return
                                 else:
-                                    await client.send_message(message.channel, "Lobby not found for " + message.author.name + ": Your profile's Game Details are not public, so the bot can't see if you're in a lobby.")
+                                    await message.channel.send("Lobby not found for " + message.author.name + ": Your profile's Game Details are not public, so the bot can't see if you're in a lobby.")
                                     if check_if_public_profile_image_can_be_posted_and_update_timestamp_if_true():
-                                        await client.send_file(message.channel, "public_profile_instructions.jpg")
+                                        await message.channel.send("", file=discord.File("public_profile_instructions.jpg"))
                                     return
                             else:
-                                await client.send_message(message.channel, "SteamAPI: GetOwnedGames() failed for " + message.author.name + ". Is the Steam Web API down?")
+                                await message.channel.send("SteamAPI: GetOwnedGames() failed for " + message.author.name + ". Is the Steam Web API down?")
                                 return
                         else:
-                            await client.send_message(message.channel, "SteamAPI: GetOwnedGames() failed for " + message.author.name + ". Is the Steam Web API down?")
+                            await message.channel.send("SteamAPI: GetOwnedGames() failed for " + message.author.name + ". Is the Steam Web API down?")
                             return
                 else:
-                    await client.send_message(message.channel, "SteamAPI: GetPlayerSummaries() failed for " + message.author.name + ". Is the Steam Web API down?")
+                    await message.channel.send("SteamAPI: GetPlayerSummaries() failed for " + message.author.name + ". Is the Steam Web API down?")
                     return
                         
             else:
-                await client.send_message(message.channel, "SteamAPI: GetPlayerSummaries() failed for " + message.author.name + ". Is the Steam Web API down?")
+                await message.channel.send("SteamAPI: GetPlayerSummaries() failed for " + message.author.name + ". Is the Steam Web API down?")
                 return
         else:
-            await client.send_message(message.channel, "Steam ID not found for " + message.author.name +  ". Type `!steamid` and " + get_steam_id_instructions())
+            await message.channel.send("Steam ID not found for " + message.author.name +  ". Type `!steamid` and " + get_steam_id_instructions())
             if check_if_steam_url_image_can_be_posted_and_update_timestamp_if_true():
-                await client.send_file(message.channel, "steam_url_instructions.jpg")
+                await message.channel.send("", file=discord.File("steam_url_instructions.jpg"))
             return
 
 client.run(discordBotTokenIMPORTANT)
