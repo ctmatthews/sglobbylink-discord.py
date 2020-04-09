@@ -23,6 +23,8 @@ https://www.youtube.com/watch?v=aIhaKxGLxBc
 - Download/clone this repository, or just save [main.py](https://github.com/itsmrpeck/sglobbylink-discord.py/blob/master/main.py), [settings_sglobbylink.py](https://github.com/itsmrpeck/sglobbylink-discord.py/blob/master/settings_sglobbylink.py) and [public_profile_instructions.jpg](https://github.com/itsmrpeck/sglobbylink-discord.py/blob/master/public_profile_instructions.jpg) to wherever you're going to run your bot. You can rename main.py to something else if you want, or even integrate its code into your existing Discord bot if you're feeling ambitious.
 - Get a Discord bot token and Steam API key, and paste them in the appropriate places near the top of settings_sglobbylink.py. If you don't have them, you can get them from https://discordapp.com/developers/applications/me and https://steamcommunity.com/dev/apikey .
 
-# Donations
+# Support
 
-This bot can be used free of charge because I want to support the wider Fighting Game Community as much as possible. However, it takes time for me to update, maintain and support it. If you would like to buy me a coffee to support my work, [donate to my Ko-Fi](https://ko-fi.com/mrpeck)!
+This bot can be used free of charge because I want to support the wider Fighting Game Community as much as possible. However, it takes time for me to update, maintain and support it. If you would like to help support my work, you can become a patron at:
+
+https://www.patreon.com/mrpeck
