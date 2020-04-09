@@ -213,7 +213,7 @@ async def on_message(message):
     if channelWhitelistIDs and message.channel:
         channelFound = False
         for channelID in channelWhitelistIDs:
-            if channelID == message.channel.id:
+            if message.channel.id == (int(channelID) if isinstance(channelID, str) else channelID):
                 channelFound = True
                 break
         if not channelFound:
