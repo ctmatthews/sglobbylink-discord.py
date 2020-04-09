@@ -1,6 +1,5 @@
 # sglobbylink-discord.py
 A Discord bot made using [discord.py](https://github.com/Rapptz/discord.py) that posts the link to your current Steam game lobby when you type `!lobby`, so other people can easily join your game without having to be on your friends list. It's intended to be used in the matchmaking channel of Fighting Game Community Discord servers, but it could be useful for other types of games too. Feel free to integrate the code into your own Discord bot, or use it as-is on your community's server!
-
 ![Someone typing !lobby, and the bot posting the lobby link](https://github.com/itsmrpeck/sglobbylink-discord.py/blob/master/example_lobby_link.png "Example Usage")
 
 # Commands
@@ -25,7 +24,7 @@ https://www.youtube.com/watch?v=aIhaKxGLxBc
 
 # Support
 
-This bot can be used free of charge because I want to support the wider Fighting Game Community as much as possible. However, it takes time for me to update, maintain and support it. If you would like to help support my work, ecome a patron at:
+This bot can be used free of charge because I want to support the wider Fighting Game Community as much as possible. However, it takes time for me to update, maintain and support it. If you would like to help support my work, become a patron at:
 
 https://www.patreon.com/mrpeck
 
