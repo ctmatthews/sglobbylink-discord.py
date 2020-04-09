@@ -25,8 +25,8 @@ steamIdFileName = "steam_ids.txt"
 # Add channel IDs to the whitelist if you only want the bot to read and reply to messages in certain channels.
 # Leaving the whitelist empty means the bot runs in all channels of your server.
 # You can get a channel's ID by enabling Settings->Appearance->Developer Mode in Discord then right-clicking a channel.
-# wrap your channel IDs in quotation marks, and separate them with commas if there's more than one channel.
-# e.g. channelWhitelistIDs =  ["476458350444412951", "112133450844143616"]
+# Separate your channel IDs with commas if there's more than one channel.
+# e.g. channelWhitelistIDs =  [476458350444412951, 112133450844143616]
 channelWhitelistIDs = []
 
 # Set this to False if you want users to be able to just enter the last part of their URL, e.g. "!steamid robinwalker" instead of "!steamid http://steamcommunity.com/id/robinwalker/".
