@@ -53,9 +53,6 @@ lastSteamURLImagePostedTimestamp = 0
 
 client = discord.Client()
 
-aioLoop = asyncio.get_event_loop()  
-aioClient = aiohttp.ClientSession(loop=aioLoop)
-
 class RequestLimitResult(Enum):
     LIMIT_NOT_REACHED = 1
     USER_LIMIT_JUST_REACHED = 2
@@ -169,12 +166,13 @@ def check_if_steam_url_image_can_be_posted_and_update_timestamp_if_true():
 
     return False
 
-async def async_get_json(url):  
-    async with aioClient.get(url) as response:
-        if response.status == 200:
-            return await response.read()
-        else:
-            return None
+async def async_get_json(url): 
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                return await response.read()
+            else:
+                return None
 
 @client.event
 async def on_ready():
@@ -185,8 +183,26 @@ async def on_ready():
 @client.event
 async def on_message(message):
 
+    # all commands start with '!', but we try to handle messages that start with <@ too
+    if not message.content.startswith('!') and not message.content.startswith('<@'):
+        return
+
+    messageContent = message.content[:40] # Grab enough message for an @username and some whitespace before the !command
+
+    # If we start with a <@, skip everything up to the >
+    startedWithUsername = messageContent.startswith('<@')
+    if startedWithUsername:
+        whitespaceStart = messageContent.find('>')
+        if whitespaceStart > 0:
+            messageContent = messageContent[(whitespaceStart + 1):]
+        else:
+            return # We didn't find a '>'
+
+    # Skip leading whitespace
+    messageContent =  messageContent.lstrip()
+
     # all commands start with '!'
-    if not message.content.startswith('!'):
+    if not messageContent.startswith('!'):
         return
 
     # filter out DMs
@@ -204,11 +220,12 @@ async def on_message(message):
             return
 
     # check which command we wanted (and ignore any message that isn't a command)
-    if message.content.startswith('!help'):
+    lowerCaseMessageStart = messageContent[:8].lower()
+    if lowerCaseMessageStart.startswith('!help') and not startedWithUsername:
         botCmd = LobbyBotCommand.HELP
-    elif message.content.startswith('!steamid'):
+    elif lowerCaseMessageStart.startswith('!steamid') and not startedWithUsername:
         botCmd = LobbyBotCommand.STEAMID
-    elif message.content.startswith('!lobby'):
+    elif lowerCaseMessageStart.startswith('!lobby'):
         botCmd = LobbyBotCommand.LOBBY
     else:
         return
