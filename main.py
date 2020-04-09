@@ -74,8 +74,8 @@ def get_steam_id_instructions():
 async def save_steam_ids():
     try:
         with open(steamIdFileName, 'w+') as f:
-            for steamId in steamIdTable.keys():
-                f.write(steamId + " " + steamIdTable[steamId] + "\n")
+            for discordUserId in steamIdTable.keys():
+                f.write(str(discordUserId) + " " + steamIdTable[discordUserId] + "\n")
     except:
         pass
 
@@ -90,11 +90,11 @@ async def load_steam_ids():
                 line = line.rstrip('\n')
                 splitLine = line.split(" ")
                 if len(splitLine) >= 2:
-                    steamIdTable[splitLine[0]] = splitLine[1]
+                    steamIdTable[int(splitLine[0])] = splitLine[1]
     except:
         pass
 
-def increment_request_count(userIdStr): # returns whether or not the user has hit their daily request limit
+def increment_request_count(userIdInt): # returns whether or not the user has hit their daily request limit
     global todaysRequestCounts
     global todaysTotalRequestCount
     global maxDailyRequestsPerUser
@@ -108,19 +108,19 @@ def increment_request_count(userIdStr): # returns whether or not the user has hi
         if todaysTotalRequestCount > maxTotalDailyRequests:
             return RequestLimitResult.ALREADY_OVER_LIMIT
 
-        if userIdStr not in todaysRequestCounts.keys():
-            todaysRequestCounts[userIdStr] = 0
+        if userIdInt not in todaysRequestCounts.keys():
+            todaysRequestCounts[userIdInt] = 0
 
-        if todaysRequestCounts[userIdStr] > maxDailyRequestsPerUser:
+        if todaysRequestCounts[userIdInt] > maxDailyRequestsPerUser:
             return RequestLimitResult.ALREADY_OVER_LIMIT
 
-        todaysRequestCounts[userIdStr] += 1
+        todaysRequestCounts[userIdInt] += 1
         todaysTotalRequestCount += 1
 
         if todaysTotalRequestCount > maxTotalDailyRequests:
             return RequestLimitResult.TOTAL_LIMIT_JUST_REACHED
 
-        elif todaysRequestCounts[userIdStr] > maxDailyRequestsPerUser:
+        elif todaysRequestCounts[userIdInt] > maxDailyRequestsPerUser:
             return RequestLimitResult.USER_LIMIT_JUST_REACHED
 
         else:
@@ -250,6 +250,7 @@ async def on_message(message):
 
     elif botCmd == LobbyBotCommand.STEAMID:
         words = message.content.split(" ")
+        bSavedSteamId = False
         if len(words) < 2:
             await message.channel.send("`!steamid` usage: " + get_steam_id_instructions())
             if check_if_steam_url_image_can_be_posted_and_update_timestamp_if_true():
@@ -315,12 +316,14 @@ async def on_message(message):
                             steamIdTable[message.author.id] = data["response"]["steamid"]
                             await save_steam_ids()
                             await message.channel.send("Saved " + message.author.name + "'s Steam ID.")
-                            return
+                            bSavedSteamId = True
+                            # Don't return; fall through to the "if bSavedSteamId" code instead
                         elif idStr.isdigit():
                             steamIdTable[message.author.id] = idStr
                             await save_steam_ids()
                             await message.channel.send("Saved " + message.author.name + "'s Steam ID.")
-                            return
+                            bSavedSteamId = True
+                            # Don't return; fall through to the "if bSavedSteamId" code instead
                         else:
                             await message.channel.send("Could not find Steam ID: " + idStr + ". Make sure you " + get_steam_id_instructions())
                             if check_if_steam_url_image_can_be_posted_and_update_timestamp_if_true():
@@ -329,6 +332,30 @@ async def on_message(message):
                 else:
                     await message.channel.send("Error: failed to find " + message.author.name + "'s Steam ID.")
                     return
+
+        if bSavedSteamId:
+            # It's common for players to add themselves to the bot without their Steam Game Details being public. Tell them this right away, to save time
+            if message.author.id in steamIdTable.keys():
+                steamId = steamIdTable[message.author.id]
+                profileUrl = "http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=" + steamApiKeyIMPORTANT + "&steamids=" + steamId
+                contents = await async_get_json(profileUrl)
+                if contents:
+                    data = json.loads(contents)
+                    if "response" in data.keys():
+                        pdata = data["response"]["players"][0]
+                        if "lobbysteamid" not in pdata.keys():
+                            # Steam didn't give us a lobby ID. But why?
+                            # Let's test if their profile's Game Details are public by seeing if Steam will tell us how many games they own.
+                            ownedGamesUrl = "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=" + steamApiKeyIMPORTANT + "&steamid=" + steamId + "&include_played_free_games=1"
+                            ownedGamesContents = await async_get_json(ownedGamesUrl)
+                            if ownedGamesContents:
+                                ownedGamesData = json.loads(ownedGamesContents)
+                                if "response" in ownedGamesData.keys():
+                                    if not ("game_count" in ownedGamesData["response"].keys() and ownedGamesData["response"]["game_count"] > 0):
+                                        await message.channel.send("(Note for " + message.author.name + ": Your profile's Game Details are not public, so the bot won't be able to see if you're in a lobby.)")
+                                        if check_if_public_profile_image_can_be_posted_and_update_timestamp_if_true():
+                                            await message.channel.send("", file=discord.File("public_profile_instructions.jpg"))
+        return
 
     elif botCmd == LobbyBotCommand.LOBBY:
         if message.author.id in steamIdTable.keys():
