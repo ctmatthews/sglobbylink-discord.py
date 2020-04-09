@@ -28,3 +28,7 @@ https://www.youtube.com/watch?v=aIhaKxGLxBc
 This bot can be used free of charge because I want to support the wider Fighting Game Community as much as possible. However, it takes time for me to update, maintain and support it. If you would like to help support my work, you can become a patron at:
 
 https://www.patreon.com/mrpeck
+
+If you'd rather make a one-off donation, you can buy me a coffee at:
+
+https://ko-fi.com/mrpeck
