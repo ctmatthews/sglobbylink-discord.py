@@ -1,6 +1,6 @@
 # sglobbylink-discord.py
-# by Mr Peck (2018-2020)
-# project page: https://github.com/itsmrpeck/sglobbylink-discord.py
+# by Peck (2018-2023)
+# project page: https://github.com/ctmatthews/sglobbylink-discord.py
 
 # IMPORTANT: You must enter your Discord bot token and Steam API key in settings_sglobbylink.py or the bot won't work!
 
@@ -29,7 +29,7 @@ if steamApiKeyIMPORTANT == "PASTE_STEAM_API_KEY_HERE":
     quit()
 
 
-versionNumber = "1.4"
+versionNumber = "1.41"
 
 steamProfileUrlIdentifier = "steamcommunity.com/id"
 steamProfileUrlIdentifierLen = len(steamProfileUrlIdentifier)
@@ -178,7 +178,7 @@ async def async_get_json(url):
 async def on_ready():
     await load_steam_ids()
     client.loop.create_task(clear_request_counts_once_per_day())
-    print("LOADED: sglobbylink-discord.py v" + versionNumber + " by Mr Peck.")
+    print("LOADED: sglobbylink-discord.py v" + versionNumber + " by Peck.")
 
 @client.event
 async def on_message(message):
@@ -243,7 +243,7 @@ async def on_message(message):
 
     # actually execute the command
     if botCmd == LobbyBotCommand.HELP:
-        await message.channel.send("Hello, I am sglobbylink-discord.py v" + versionNumber + " by Mr Peck.\n\nCommands:\n- `!lobby`: posts the link to your current Steam lobby.\n- `!steamid`: tells the bot what your Steam profile is. You can " + get_steam_id_instructions())
+        await message.channel.send("Hello, I am sglobbylink-discord.py v" + versionNumber + " by Peck.\n\nCommands:\n- `!lobby`: posts the link to your current Steam lobby.\n- `!steamid`: tells the bot what your Steam profile is. You can " + get_steam_id_instructions())
         if check_if_steam_url_image_can_be_posted_and_update_timestamp_if_true():
             await message.channel.send("", file=discord.File("steam_url_instructions.jpg"))
         return
